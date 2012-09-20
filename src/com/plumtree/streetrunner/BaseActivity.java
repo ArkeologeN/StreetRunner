@@ -5,9 +5,11 @@ import org.anddev.andengine.engine.camera.Camera;
 import org.anddev.andengine.engine.options.EngineOptions;
 import org.anddev.andengine.engine.options.resolutionpolicy.RatioResolutionPolicy;
 import org.anddev.andengine.entity.scene.Scene;
-import org.anddev.andengine.entity.scene.background.ColorBackground;
+import org.anddev.andengine.entity.scene.background.AutoParallaxBackground;
+import org.anddev.andengine.entity.scene.background.ParallaxBackground.ParallaxEntity;
 import org.anddev.andengine.entity.sprite.Sprite;
 import org.anddev.andengine.entity.util.FPSLogger;
+import org.anddev.andengine.opengl.texture.TextureOptions;
 import org.anddev.andengine.opengl.texture.atlas.bitmap.BitmapTextureAtlas;
 import org.anddev.andengine.opengl.texture.atlas.bitmap.BitmapTextureAtlasTextureRegionFactory;
 import org.anddev.andengine.opengl.texture.region.TextureRegion;
@@ -19,9 +21,9 @@ public class BaseActivity extends BaseGameActivity {
 	
 	private Camera mCamera;
 	private Scene mMainScene;
-	private BitmapTextureAtlas mBitmapAtlas;
-	private TextureRegion mPlayerTextureRegion;
-	private Sprite mCharacterSprite;
+	private BitmapTextureAtlas mBitmapAtlas, mBackgroundAtlas;
+	private TextureRegion mPlayerTextureRegion, mSceneBgTextureRegion;
+	private Sprite mCharacterSprite, mBackgroundSprite;
 
 	@Override
 	public void onLoadComplete() {
@@ -49,9 +51,13 @@ public class BaseActivity extends BaseGameActivity {
 	public void onLoadResources() {
 		// TODO Auto-generated method stub
 		BitmapTextureAtlasTextureRegionFactory.setAssetBasePath("gfx/");
+		this.mBackgroundAtlas = new BitmapTextureAtlas(1024,1024, TextureOptions.DEFAULT);
+		this.mSceneBgTextureRegion = BitmapTextureAtlasTextureRegionFactory.createFromAsset(mBackgroundAtlas, this, "background.png", 0, 0);
+		mEngine.getTextureManager().loadTexture(mBackgroundAtlas);
+		
+		BitmapTextureAtlasTextureRegionFactory.setAssetBasePath("gfx/");
 		this.mBitmapAtlas = new BitmapTextureAtlas(1024,1024,Configuration.CTextureOptions);
 		this.mPlayerTextureRegion = BitmapTextureAtlasTextureRegionFactory.createFromAsset(mBitmapAtlas, this, "Player.png", 0, 0);
-		
 		mEngine.getTextureManager().loadTexture(mBitmapAtlas);
 	}
 
@@ -61,7 +67,13 @@ public class BaseActivity extends BaseGameActivity {
 		
 		mEngine.registerUpdateHandler(new FPSLogger());
 		this.mMainScene = new Scene();
-		this.mMainScene.setBackground(new ColorBackground(255, 255, 255,1));
+		this.mBackgroundSprite = new Sprite(0, mCamera.getHeight() - this.mSceneBgTextureRegion.getHeight(), this.mSceneBgTextureRegion);
+		
+		final AutoParallaxBackground mParallaxBackground = new AutoParallaxBackground(0, 0, 0, 10);
+		mParallaxBackground.attachParallaxEntity(
+				new ParallaxEntity(-25.0f, this.mBackgroundSprite));
+		
+		this.mMainScene.setBackground(mParallaxBackground);
 		
 		final int characterX = (int) (mCamera.getWidth() / 2);
 		final int characterY = (int) (mCamera.getHeight() - (mPlayerTextureRegion.getHeight() * 1.3));
